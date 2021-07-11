@@ -2,6 +2,7 @@ package core
 
 import (
 	"go-sdl-game-engine/engine/characters"
+	"go-sdl-game-engine/engine/collisions"
 	"go-sdl-game-engine/engine/graphics"
 	"go-sdl-game-engine/engine/inputs"
 	"go-sdl-game-engine/engine/maps"
@@ -28,12 +29,13 @@ type Engine interface {
 }
 
 type engine struct {
-	isRunning      bool
-	window         *sdl.Window
-	renderer       *sdl.Renderer
-	textureManager graphics.TextureManager
-	player         *characters.Warrior
-	levelMap       *maps.MapParser
+	isRunning        bool
+	window           *sdl.Window
+	renderer         *sdl.Renderer
+	textureManager   graphics.TextureManager
+	player           *characters.Warrior
+	levelMap         *maps.MapParser
+	collisionHandler *collisions.CollisionHandler
 }
 
 func (e *engine) Init() bool {
@@ -83,7 +85,9 @@ func (e *engine) Init() bool {
 	mapParser := maps.NewMapParser("MAP", "assets/maps/map.tmx", textureManager)
 	e.levelMap = mapParser
 
-	e.player = characters.NewWarrior(&characters.DefaultWarriorProps, textureManager)
+	e.collisionHandler = collisions.NewCollisionHandler(e.levelMap.GetMap("MAP"))
+
+	e.player = characters.NewWarrior(&characters.DefaultWarriorProps, textureManager, e.collisionHandler)
 
 	return e.isRunning
 }

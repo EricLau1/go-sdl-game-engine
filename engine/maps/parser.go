@@ -61,7 +61,7 @@ func ParseTileset(tileset *Tileset) *Tileset {
 
 func ParseTileLayer(layer *Layer, tilesets *TilesetList, tileSize, rowCount, colCount int, textureManager graphics.TextureManager) *TileLayer {
 
-	tileMap := NewTileMap(rowCount, colCount)
+	tileMap := NewTileMap(rowCount, colCount, 0)
 
 	data := ParseData(layer)
 
@@ -70,6 +70,8 @@ func ParseTileLayer(layer *Layer, tilesets *TilesetList, tileSize, rowCount, col
 			tileMap.Set(i, j, value)
 		}
 	}
+
+	tileMap.Log()
 
 	return NewTileLayer(tileSize, rowCount, colCount, tileMap, tilesets, textureManager)
 }

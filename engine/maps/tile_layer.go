@@ -1,40 +1,64 @@
 package maps
 
 import (
+	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
 	"go-sdl-game-engine/engine/graphics"
 )
 
 type TileMap struct {
-	tiles [][]int
+	tiles [][]*int
+	rows  int
+	cols  int
 }
 
-func NewTileMap(rows, cols int) *TileMap {
-	tiles := make([][]int, rows)
+func NewTileMap(rows, cols, defaultValue int) *TileMap {
+	tiles := make([][]*int, rows)
 
 	for row := 0; row < rows; row++ {
-		tiles[row] = make([]int, 0, cols)
+		tiles[row] = make([]*int, 0, cols)
 		for col := 0; col < cols; col++ {
-			tiles[row] = append(tiles[row], 0)
+			def := defaultValue
+			tiles[row] = append(tiles[row], &def)
 		}
 	}
 
-	return &TileMap{tiles}
+	return &TileMap{tiles: tiles, rows: rows, cols: cols}
 }
 
-func (tm *TileMap) Add(row []int) {
+func (tm *TileMap) Add(row []*int) {
 	tm.tiles = append(tm.tiles, row)
 }
 
 func (tm *TileMap) Set(row, col, value int) {
 	if tm.tiles[row] == nil {
-		tm.tiles[row] = []int{}
+		tm.tiles[row] = make([]*int, tm.cols)
 	}
-	tm.tiles[row][col] = value
+	tm.tiles[row][col] = &value
 }
 
 func (tm *TileMap) Get(i, j int) int {
-	return tm.tiles[i][j]
+	if i >= tm.rows || j >= tm.cols {
+		return 0
+	}
+	return *tm.tiles[i][j]
+}
+
+func (tm *TileMap) Rows() int {
+	return tm.rows
+}
+
+func (tm *TileMap) Columns() int {
+	return tm.cols
+}
+
+func (tm *TileMap) Log() {
+	for _, row := range tm.tiles {
+		for _, col := range row {
+			fmt.Printf("%d ", *col)
+		}
+		fmt.Println("")
+	}
 }
 
 type TilesetList struct {
@@ -71,7 +95,7 @@ type TileLayer struct {
 	Size           int
 	Rows           int
 	Columns        int
-	Maps           *TileMap
+	Tilemap        *TileMap
 	Tilesets       *TilesetList
 	textureManager graphics.TextureManager
 }
@@ -82,7 +106,7 @@ func NewTileLayer(size, rows, cols int, tileMap *TileMap, tilesets *TilesetList,
 	tileLayer.Size = size
 	tileLayer.Rows = rows
 	tileLayer.Columns = cols
-	tileLayer.Maps = tileMap
+	tileLayer.Tilemap = tileMap
 	tileLayer.Tilesets = tilesets
 	tileLayer.textureManager = textureManager
 
@@ -100,12 +124,16 @@ func NewTileLayer(size, rows, cols int, tileMap *TileMap, tilesets *TilesetList,
 	return &tileLayer
 }
 
+func (tl *TileLayer) Log() {
+	sdl.Log("TileLayer: TileSize=%d, Rows=%d, Cols=%d, Tilesets=%d", tl.Size, tl.Rows, tl.Columns, tl.Tilesets.Size())
+}
+
 func (tl *TileLayer) Render() {
 	for i := 0; i < tl.Rows; i++ {
 
 		for j := 0; j < tl.Columns; j++ {
 
-			tileID := tl.Maps.Get(i, j)
+			tileID := tl.Tilemap.Get(i, j)
 
 			if tileID == 0 {
 				continue
@@ -136,7 +164,7 @@ func (tl *TileLayer) Render() {
 				tileCol = ts.Columns - 1
 			}
 
-			tl.textureManager.DrawTile(ts.Name, int32(ts.Width), int32(j * ts.Width), int32(i * ts.Width), int32(tileRow), int32(tileCol), sdl.FLIP_NONE)
+			tl.textureManager.DrawTile(ts.Name, int32(ts.Width), int32(j*ts.Width), int32(i*ts.Width), int32(tileRow), int32(tileCol), sdl.FLIP_NONE)
 		}
 
 	}

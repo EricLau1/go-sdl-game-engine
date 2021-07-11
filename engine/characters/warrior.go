@@ -3,6 +3,7 @@ package characters
 import (
 	"github.com/veandco/go-sdl2/sdl"
 	"go-sdl-game-engine/engine/animations"
+	"go-sdl-game-engine/engine/collisions"
 	"go-sdl-game-engine/engine/graphics"
 	"go-sdl-game-engine/engine/inputs"
 	"go-sdl-game-engine/engine/physics"
@@ -78,31 +79,38 @@ var DefaultWarriorProps = Properties{
 
 type Warrior struct {
 	*Character
-	isRunning        bool
-	jumpTime         float64
-	jumpForce        float64
-	attackTime       float64
-	isJumping        bool
-	isFalling        bool
-	isGrounded       bool
-	isAttacking1     bool
-	isAttacking2     bool
-	isAttacking3     bool
-	rigidBody        *physics.RigidBody
-	textureManager   graphics.TextureManager
-	animationManager animations.AnimationManager
+	isRunning         bool
+	jumpTime          float64
+	jumpForce         float64
+	attackTime        float64
+	isJumping         bool
+	isFalling         bool
+	isGrounded        bool
+	isAttacking1      bool
+	isAttacking2      bool
+	isAttacking3      bool
+	rigidBody         *physics.RigidBody
+	collider          *collisions.Collider
+	lastSafePosition  *physics.Vector2D
+	textureManager    graphics.TextureManager
+	animationManager  animations.AnimationManager
+	collisionsHandler *collisions.CollisionHandler
 }
 
-func NewWarrior(props *Properties, textureManager graphics.TextureManager) *Warrior {
+func NewWarrior(props *Properties, textureManager graphics.TextureManager, collisionsHandler *collisions.CollisionHandler) *Warrior {
 	var warrior Warrior
 
 	warrior.Character = &Character{"warrior", props}
 	warrior.textureManager = textureManager
+	warrior.lastSafePosition = physics.NewVector2D(props.Transform.X, props.Transform.Y)
 
 	warrior.props.Flip = sdl.FLIP_NONE
 	warrior.jumpTime = JUMP_TIME
 	warrior.jumpForce = JUMP_FORCE
 	warrior.attackTime = ATTACK_TIME
+
+	warrior.collider = &collisions.Collider{}
+	warrior.collider.SetBuffer(-65, -53, 0, 0)
 
 	warrior.rigidBody = physics.NewRigidBody()
 	warrior.rigidBody.SetGravity(3.0)
@@ -110,11 +118,13 @@ func NewWarrior(props *Properties, textureManager graphics.TextureManager) *Warr
 	warrior.animationManager = animations.NewAnimationManager(textureManager)
 	warrior.animationManager.Set(&WarriorIdleFrames)
 
+	warrior.collisionsHandler = collisionsHandler
+
 	return &warrior
 }
 
 func (w *Warrior) Draw() {
-	w.animationManager.Draw(int32(w.props.Transform.X), int32(w.props.Transform.Y), w.props.Width, w.props.Height, w.props.Flip)
+	w.animationManager.Draw(int32(w.GetX()), int32(w.GetY()), w.props.Width, w.props.Height, w.props.Flip)
 }
 
 func (w *Warrior) Update(dt float64) {
@@ -175,13 +185,29 @@ func (w *Warrior) Update(dt float64) {
 		w.attackTime = ATTACK_TIME
 	}
 
-	w.rigidBody.Update(dt)
-	w.props.Transform.X += w.rigidBody.Position().X
-	w.props.Transform.Y += w.rigidBody.Position().Y
+	boxWidth := int32(30)
+	boxHeight := int32(51)
 
-	if w.props.Transform.Y >= GROUND {
+	w.rigidBody.Update(dt)
+
+	w.lastSafePosition.X = w.GetX()
+	w.props.Transform.X += w.rigidBody.Position().X
+	w.collider.Set(int32(w.GetX()), int32(w.GetY()), boxWidth, boxHeight)
+
+	if w.collisionsHandler.Map(w.collider.Get()) {
+		sdl.Log("COLLIDE X !!!")
+		w.props.Transform.X = w.lastSafePosition.X
+	}
+
+	w.rigidBody.Update(dt)
+	w.lastSafePosition.Y = w.GetY()
+	w.props.Transform.Y += w.rigidBody.Position().Y
+	w.collider.Set(int32(w.GetX()), int32(w.GetY()), boxWidth, boxHeight)
+
+	if w.collisionsHandler.Map(w.collider.Get()) {
+		sdl.Log("COLLIDE Y !!!")
 		w.isGrounded = true
-		w.props.Transform.Y = GROUND - 1
+		w.props.Transform.Y = w.lastSafePosition.Y
 	} else {
 		w.isGrounded = false
 	}
@@ -192,6 +218,14 @@ func (w *Warrior) Update(dt float64) {
 
 func (w *Warrior) Clean() {
 	w.textureManager.Drop(w.props.TextureID)
+}
+
+func (w *Warrior) GetX() float64 {
+	return w.props.Transform.X
+}
+
+func (w *Warrior) GetY() float64 {
+	return w.props.Transform.Y
 }
 
 func (w *Warrior) Animate() {
