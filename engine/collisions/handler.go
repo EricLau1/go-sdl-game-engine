@@ -29,12 +29,11 @@ func (h *CollisionHandler) Check(a, b sdl.Rect) bool {
 
 func (h *CollisionHandler) Map(a sdl.Rect) bool {
 
-
 	rows := int32(h.collisionLayer.Rows)
 	cols := int32(h.collisionLayer.Columns)
 	tileSize := int32(h.collisionLayer.Size)
 
-	sdl.Log("TileSize=%d, Rows=%d, Cols=%d", tileSize, rows, cols)
+	//sdl.Log("TileSize=%d, Rows=%d, Cols=%d", tileSize, rows, cols)
 
 	leftTile := a.X / tileSize
 	rightTile := (a.X + a.W) / tileSize
@@ -57,13 +56,13 @@ func (h *CollisionHandler) Map(a sdl.Rect) bool {
 		bottomTile = rows
 	}
 
-	sdl.Log("Map Collision: Player=%v, LeftTile=%v, RightTile=%v, TopTile=%d, BottomTile=%d", a,leftTile, rightTile, topTile, bottomTile)
+	//sdl.Log("Map Collision: Player=%v, LeftTile=%v, RightTile=%v, TopTile=%d, BottomTile=%d", a,leftTile, rightTile, topTile, bottomTile)
 
 	for column := leftTile; column <= rightTile; column++ {
 		for row := topTile; row <= bottomTile; row++ {
 
 			v := h.collisionTileMap.Get(int(row), int(column))
-			sdl.Log("TileMap: Row=%d, Column=%d, Value=%d", row, column, v)
+			//sdl.Log("TileMap: Row=%d, Column=%d, Value=%d", row, column, v)
 			if v > 0 {
 				return true
 			}

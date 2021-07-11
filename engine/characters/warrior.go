@@ -16,12 +16,12 @@ const (
 	ATTACK_TIME = 20.0
 
 	GROUND = 200
+
+	defaultX = 100
+	defaultY = 200
 )
 
 var (
-
-	WarriorRestartPosition = physics.NewTransform(100, 200)
-
 	WarriorIdleFrames = animations.Frames{
 		TextureID: "player_idle",
 		Count:     8,
@@ -76,7 +76,7 @@ var DefaultWarriorProps = Properties{
 	TextureID: "warrior",
 	Width:     1280 / 8,
 	Height:    111,
-	Transform: physics.NewTransform(100, 200),
+	Transform: physics.NewTransform(defaultX, defaultY),
 	Flip:      sdl.FLIP_NONE,
 }
 
@@ -103,9 +103,9 @@ type Warrior struct {
 func NewWarrior(props *Properties, textureManager graphics.TextureManager, collisionsHandler *collisions.CollisionHandler) *Warrior {
 	var warrior Warrior
 
-	warrior.Character = &Character{"warrior", props}
+	warrior.Character = NewCharacter("warrior", props)
 	warrior.textureManager = textureManager
-	warrior.lastSafePosition = physics.NewVector2D(props.Transform.X, props.Transform.Y)
+	warrior.lastSafePosition = physics.NewVector2D(warrior.GetX(), warrior.GetY())
 
 	warrior.props.Flip = sdl.FLIP_NONE
 	warrior.jumpTime = JUMP_TIME
@@ -126,6 +126,11 @@ func NewWarrior(props *Properties, textureManager graphics.TextureManager, colli
 	return &warrior
 }
 
+func (w *Warrior) Reset() {
+	w.props.Transform.X = defaultX
+	w.props.Transform.Y = defaultY
+}
+
 func (w *Warrior) Draw() {
 	w.animationManager.Draw(int32(w.GetX()), int32(w.GetY()), w.props.Width, w.props.Height, w.props.Flip)
 }
@@ -135,8 +140,7 @@ func (w *Warrior) Update(dt float64) {
 	w.rigidBody.UnSetForce()
 
 	if inputs.GetKeyDown(sdl.SCANCODE_R) {
-		w.props.Transform.X = WarriorRestartPosition.X
-		w.props.Transform.Y = WarriorRestartPosition.Y
+		w.Reset()
 	}
 
 	if inputs.GetAxisDirection(inputs.HORIZONTAL) == physics.FORWARD && !w.IsAttacking() {
@@ -203,7 +207,6 @@ func (w *Warrior) Update(dt float64) {
 	w.collider.Set(int32(w.GetX()), int32(w.GetY()), boxWidth, boxHeight)
 
 	if w.collisionsHandler.Map(w.collider.Get()) {
-		sdl.Log("COLLIDE X !!!")
 		w.props.Transform.X = w.lastSafePosition.X
 	}
 
@@ -213,12 +216,14 @@ func (w *Warrior) Update(dt float64) {
 	w.collider.Set(int32(w.GetX()), int32(w.GetY()), boxWidth, boxHeight)
 
 	if w.collisionsHandler.Map(w.collider.Get()) {
-		sdl.Log("COLLIDE Y !!!")
 		w.isGrounded = true
 		w.props.Transform.Y = w.lastSafePosition.Y
 	} else {
 		w.isGrounded = false
 	}
+
+	w.origin.X = w.GetX() + float64(w.props.Width)/2.0
+	w.origin.Y = w.GetY() + float64(w.props.Height)/2.0
 
 	w.Animate()
 	w.animationManager.Update()
@@ -226,14 +231,6 @@ func (w *Warrior) Update(dt float64) {
 
 func (w *Warrior) Clean() {
 	w.textureManager.Drop(w.props.TextureID)
-}
-
-func (w *Warrior) GetX() float64 {
-	return w.props.Transform.X
-}
-
-func (w *Warrior) GetY() float64 {
-	return w.props.Transform.Y
 }
 
 func (w *Warrior) Animate() {

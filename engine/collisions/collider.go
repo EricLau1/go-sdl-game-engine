@@ -23,5 +23,3 @@ func (c *Collider) Get() sdl.Rect {
 func (c *Collider) SetBuffer(x, y, w, h int32) {
 	c.buf = &sdl.Rect{X: x, Y: y, W: w, H: h}
 }
-
-

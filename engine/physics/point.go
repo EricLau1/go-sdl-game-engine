@@ -1,4 +1,4 @@
-package collisions
+package physics
 
 type Point struct {
 	X, Y float64

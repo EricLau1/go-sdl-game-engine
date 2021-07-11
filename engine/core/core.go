@@ -1,6 +1,7 @@
 package core
 
 import (
+	"go-sdl-game-engine/engine/camera"
 	"go-sdl-game-engine/engine/characters"
 	"go-sdl-game-engine/engine/collisions"
 	"go-sdl-game-engine/engine/graphics"
@@ -34,8 +35,9 @@ type engine struct {
 	renderer         *sdl.Renderer
 	textureManager   graphics.TextureManager
 	player           *characters.Warrior
-	mapParser         *maps.MapParser
+	mapParser        *maps.MapParser
 	collisionHandler *collisions.CollisionHandler
+	cam              *camera.Camera
 }
 
 func (e *engine) Init() bool {
@@ -71,7 +73,9 @@ func (e *engine) Init() bool {
 	e.isRunning = true
 	sdl.Log("engined initialized")
 
-	textureManager := graphics.NewTextureManager(e.renderer)
+	e.cam = camera.NewCamera(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+	textureManager := graphics.NewTextureManager(e.renderer, e.cam)
 	e.textureManager = textureManager
 
 	textureManager.Load("player_idle", "assets/player/Idle.png")
@@ -89,12 +93,15 @@ func (e *engine) Init() bool {
 
 	e.player = characters.NewWarrior(&characters.DefaultWarriorProps, textureManager, e.collisionHandler)
 
+	e.cam.SetTarget(e.player.GetOrigin())
+
 	return e.isRunning
 }
 
 func (e *engine) Update() {
 	dt := timer.DeltaTime()
 	e.player.Update(dt)
+	e.cam.Update(dt)
 }
 
 func (e *engine) Render() {
