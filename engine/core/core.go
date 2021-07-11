@@ -4,6 +4,7 @@ import (
 	"go-sdl-game-engine/engine/characters"
 	"go-sdl-game-engine/engine/graphics"
 	"go-sdl-game-engine/engine/inputs"
+	"go-sdl-game-engine/engine/maps"
 	"go-sdl-game-engine/engine/timer"
 
 	"github.com/veandco/go-sdl2/img"
@@ -32,18 +33,19 @@ type engine struct {
 	renderer       *sdl.Renderer
 	textureManager graphics.TextureManager
 	player         *characters.Warrior
+	levelMap       *maps.MapParser
 }
 
 func (e *engine) Init() bool {
 	err := sdl.Init(sdl.INIT_EVERYTHING)
 	if err != nil {
-		sdl.LogError(sdl.LOG_CATEGORY_ERROR, err.Error())
+		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return false
 	}
 	sdl.Log("sdl initialized")
 	err = img.Init(img.INIT_JPG | img.INIT_PNG)
 	if err != nil {
-		sdl.LogError(sdl.LOG_CATEGORY_ERROR, err.Error())
+		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return false
 	}
 	sdl.Log("sdl img initialized")
@@ -55,12 +57,12 @@ func (e *engine) Init() bool {
 	)
 	sdl.Log("window created")
 	if err != nil {
-		sdl.LogError(sdl.LOG_CATEGORY_ERROR, err.Error())
+		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return false
 	}
-	e.renderer, err = sdl.CreateRenderer(e.window, -1, sdl.RENDERER_ACCELERATED | sdl.RENDERER_PRESENTVSYNC)
+	e.renderer, err = sdl.CreateRenderer(e.window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_PRESENTVSYNC)
 	if err != nil {
-		sdl.LogError(sdl.LOG_CATEGORY_ERROR, err.Error())
+		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return false
 	}
 	sdl.Log("renderer created")
@@ -78,6 +80,9 @@ func (e *engine) Init() bool {
 	textureManager.Load("player_attack2", "assets/player/Attack2.png")
 	textureManager.Load("player_attack3", "assets/player/Attack3.png")
 
+	mapParser := maps.NewMapParser("MAP", "assets/maps/map.tmx", textureManager)
+	e.levelMap = mapParser
+
 	e.player = characters.NewWarrior(&characters.DefaultWarriorProps, textureManager)
 
 	return e.isRunning
@@ -91,14 +96,15 @@ func (e *engine) Update() {
 func (e *engine) Render() {
 	err := e.renderer.SetDrawColor(124, 218, 254, 255)
 	if err != nil {
-		sdl.LogError(sdl.LOG_CATEGORY_ERROR, err.Error())
+		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return
 	}
 	err = e.renderer.Clear()
 	if err != nil {
-		sdl.LogError(sdl.LOG_CATEGORY_ERROR, err.Error())
+		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return
 	}
+	e.levelMap.GetMap("MAP").Render()
 	e.player.Draw()
 	e.renderer.Present()
 }
@@ -112,12 +118,12 @@ func (e *engine) Clean() bool {
 
 	err := e.renderer.Destroy()
 	if err != nil {
-		sdl.LogError(sdl.LOG_CATEGORY_ERROR, err.Error())
+		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return false
 	}
 	err = e.window.Destroy()
 	if err != nil {
-		sdl.LogError(sdl.LOG_CATEGORY_ERROR, err.Error())
+		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return false
 	}
 	img.Quit()
