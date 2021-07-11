@@ -53,6 +53,13 @@ func (mp *MapParser) GetMap(id string) *GameMap {
 	return mp.gameMaps[id]
 }
 
+func (mp *MapParser) Clean() {
+	for key := range mp.gameMaps {
+		mp.gameMaps[key] = nil
+		delete(mp.gameMaps, key)
+	}
+}
+
 func ParseTileset(tileset *Tileset) *Tileset {
 	tileset.LastID = (tileset.FirstID + tileset.Count) - 1
 	tileset.Rows = tileset.Count / tileset.Columns

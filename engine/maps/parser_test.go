@@ -2,7 +2,6 @@ package maps
 
 import (
 	"encoding/xml"
-	"fmt"
 	"testing"
 )
 
@@ -85,10 +84,4 @@ func TestParseData(t *testing.T) {
 		t.Errorf("invalid data rows. Expected = %d, Actual = %d", 20, len(data))
 	}
 
-	for _, row := range data {
-		fmt.Println(row)
-		if len(row) != 60 {
-			t.Errorf("invalid data columns. Expected = %d, Actual = %d", 60, len(row))
-		}
-	}
 }

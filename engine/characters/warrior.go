@@ -19,6 +19,9 @@ const (
 )
 
 var (
+
+	WarriorRestartPosition = physics.NewTransform(100, 200)
+
 	WarriorIdleFrames = animations.Frames{
 		TextureID: "player_idle",
 		Count:     8,
@@ -130,6 +133,11 @@ func (w *Warrior) Draw() {
 func (w *Warrior) Update(dt float64) {
 	w.isRunning = false
 	w.rigidBody.UnSetForce()
+
+	if inputs.GetKeyDown(sdl.SCANCODE_R) {
+		w.props.Transform.X = WarriorRestartPosition.X
+		w.props.Transform.Y = WarriorRestartPosition.Y
+	}
 
 	if inputs.GetAxisDirection(inputs.HORIZONTAL) == physics.FORWARD && !w.IsAttacking() {
 		w.rigidBody.ApplyForceX(physics.FORWARD * RUN_FORCE)

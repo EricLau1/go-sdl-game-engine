@@ -34,7 +34,7 @@ type engine struct {
 	renderer         *sdl.Renderer
 	textureManager   graphics.TextureManager
 	player           *characters.Warrior
-	levelMap         *maps.MapParser
+	mapParser         *maps.MapParser
 	collisionHandler *collisions.CollisionHandler
 }
 
@@ -83,9 +83,9 @@ func (e *engine) Init() bool {
 	textureManager.Load("player_attack3", "assets/player/Attack3.png")
 
 	mapParser := maps.NewMapParser("MAP", "assets/maps/map.tmx", textureManager)
-	e.levelMap = mapParser
+	e.mapParser = mapParser
 
-	e.collisionHandler = collisions.NewCollisionHandler(e.levelMap.GetMap("MAP"))
+	e.collisionHandler = collisions.NewCollisionHandler(e.mapParser.GetMap("MAP"))
 
 	e.player = characters.NewWarrior(&characters.DefaultWarriorProps, textureManager, e.collisionHandler)
 
@@ -108,7 +108,7 @@ func (e *engine) Render() {
 		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return
 	}
-	e.levelMap.GetMap("MAP").Render()
+	e.mapParser.GetMap("MAP").Render()
 	e.player.Draw()
 	e.renderer.Present()
 }
@@ -118,6 +118,7 @@ func (e *engine) Events() {
 }
 
 func (e *engine) Clean() bool {
+	e.mapParser.Clean()
 	e.textureManager.Clean()
 
 	err := e.renderer.Destroy()
