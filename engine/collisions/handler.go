@@ -11,7 +11,7 @@ type CollisionHandler struct {
 }
 
 func NewCollisionHandler(gameMap *maps.GameMap) *CollisionHandler {
-	layer := gameMap.Back()
+	layer := gameMap.Front()
 
 	layer.Log()
 

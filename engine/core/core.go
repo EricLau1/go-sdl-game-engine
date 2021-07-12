@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"go-sdl-game-engine/engine/camera"
 	"go-sdl-game-engine/engine/characters"
 	"go-sdl-game-engine/engine/collisions"
@@ -86,7 +87,9 @@ func (e *engine) Init() bool {
 	textureManager.Load("player_attack2", "assets/player/Attack2.png")
 	textureManager.Load("player_attack3", "assets/player/Attack3.png")
 
-	mapParser := maps.NewMapParser("MAP", "assets/maps/map.tmx", textureManager)
+	textureManager.Load("bg", "assets/bg/1.jpg")
+
+	mapParser := maps.NewMapParser("MAP", "assets/maps/map2.tmx", textureManager)
 	e.mapParser = mapParser
 
 	e.collisionHandler = collisions.NewCollisionHandler(e.mapParser.GetMap("MAP"))
@@ -102,6 +105,7 @@ func (e *engine) Update() {
 	dt := timer.DeltaTime()
 	e.player.Update(dt)
 	e.cam.Update(dt)
+	e.window.SetTitle(fmt.Sprintf("FPS: %.1f", timer.GetFPS()))
 }
 
 func (e *engine) Render() {
@@ -115,6 +119,7 @@ func (e *engine) Render() {
 		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return
 	}
+	e.textureManager.Draw("bg", 0, 0, 2100, SCREEN_HEIGHT +10, sdl.FLIP_NONE)
 	e.mapParser.GetMap("MAP").Render()
 	e.player.Draw()
 	e.renderer.Present()
