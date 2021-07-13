@@ -2,16 +2,17 @@ package core
 
 import (
 	"fmt"
+	"github.com/veandco/go-sdl2/img"
+	"github.com/veandco/go-sdl2/mix"
+	"github.com/veandco/go-sdl2/sdl"
 	"go-sdl-game-engine/engine/camera"
 	"go-sdl-game-engine/engine/characters"
 	"go-sdl-game-engine/engine/collisions"
 	"go-sdl-game-engine/engine/graphics"
 	"go-sdl-game-engine/engine/inputs"
 	"go-sdl-game-engine/engine/maps"
+	"go-sdl-game-engine/engine/sounds"
 	"go-sdl-game-engine/engine/timer"
-
-	"github.com/veandco/go-sdl2/img"
-	"github.com/veandco/go-sdl2/sdl"
 )
 
 const (
@@ -39,6 +40,7 @@ type engine struct {
 	mapParser        *maps.MapParser
 	collisionHandler *collisions.CollisionHandler
 	cam              *camera.Camera
+	soundsManager    *sounds.Manager
 }
 
 func (e *engine) Init() bool {
@@ -54,6 +56,17 @@ func (e *engine) Init() bool {
 		return false
 	}
 	sdl.Log("sdl img initialized")
+	err = mix.Init(mix.INIT_MP3)
+	if err != nil {
+		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
+		return false
+	}
+	sdl.Log("sdl mixer initialized")
+	err = mix.OpenAudio(22050, mix.DEFAULT_FORMAT, 2, 4096)
+	if err != nil {
+		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
+		return false
+	}
 	e.window, err = sdl.CreateWindow(
 		"Golang SDL Game Engine v0.0.1",
 		sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED,
@@ -95,8 +108,11 @@ func (e *engine) Init() bool {
 	e.collisionHandler = collisions.NewCollisionHandler(e.mapParser.GetMap("MAP"))
 
 	e.player = characters.NewWarrior(&characters.DefaultWarriorProps, textureManager, e.collisionHandler)
-
 	e.cam.SetTarget(e.player.GetOrigin())
+
+	e.soundsManager = sounds.NewSoundsManager()
+	e.soundsManager.Load("bg", "assets/audios/bg/bg.mp3")
+	e.soundsManager.Play("bg", sounds.REPEAT)
 
 	return e.isRunning
 }
@@ -119,7 +135,7 @@ func (e *engine) Render() {
 		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return
 	}
-	e.textureManager.Draw("bg", 0, 0, 2100, SCREEN_HEIGHT +10, sdl.FLIP_NONE)
+	e.textureManager.Draw("bg", 0, 0, 2100, SCREEN_HEIGHT+10, sdl.FLIP_NONE)
 	e.mapParser.GetMap("MAP").Render()
 	e.player.Draw()
 	e.renderer.Present()
@@ -130,6 +146,7 @@ func (e *engine) Events() {
 }
 
 func (e *engine) Clean() bool {
+	e.soundsManager.Clean()
 	e.mapParser.Clean()
 	e.textureManager.Clean()
 
@@ -143,6 +160,8 @@ func (e *engine) Clean() bool {
 		sdl.LogError(sdl.LOG_CATEGORY_APPLICATION, err.Error())
 		return false
 	}
+	mix.CloseAudio()
+	mix.Quit()
 	img.Quit()
 	sdl.Quit()
 	sdl.Log("engine finished")
